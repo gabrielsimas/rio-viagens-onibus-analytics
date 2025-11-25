@@ -4,6 +4,8 @@
 
 ## ***Matrícula:*** **4052025000943**
 
+![Status](https://img.shields.io/badge/Status-In%20Progress-yellow?style=for-the-badge)
+
 ![Python](https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Airflow](https://img.shields.io/badge/Airflow-Orchestration-017CEE?style=for-the-badge&logo=apache-airflow&logoColor=white)
