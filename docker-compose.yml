@@ -9,6 +9,9 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE_DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE_LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
+    # Reduzindo a concorrência para economizar CPU/RAM
+    AIRFLOW__CORE__PARALLELISM: 2
+    AIRFLOW__CORE__DAG_CONCURRENCY: 2
     GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/keys/gcp-key.json
   volumes:
     - ./dags:/opt/airflow/dags
@@ -16,6 +19,10 @@ x-airflow-common: &airflow-common
     - ./plugins:/opt/airflow/plugins
     - ./keys:/opt/airflow/keys
   user: "${AIRFLOW_UID:-50000}:0"
+  deploy:
+    resources:
+      limits:
+        memory: 1.5G # Limite bem rígido para o AirFlow não estourar
   depends_on:
     &airflow-common-depends-on
     postgres:
@@ -30,6 +37,10 @@ services:
       POSTGRESS_DB: airflow
     volumes:
       - ./data_volumes/postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M #Pg aguenta bem com pouca RAM para metadados
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
@@ -69,7 +80,10 @@ services:
       - "9047:9047"
       - "31010:31010"
     environment:
-      - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Dpaths.dist=file:///opt/dremio/data/dist
+      # A MÁGICA DA ECONOMIA AQUI:
+      # Força o Java a usar no máximo 1.5GB de Heap.
+      # O Dremio vai reclamar que é pouco, mas para MVP funciona.
+      - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Xms1024m -Xmx1536m -XX:MaxDirectMemorySize=512m
     volumes:
       - ./data_volumes/dremio_data:/opt/dremio/data
     restart: unless-stopped
