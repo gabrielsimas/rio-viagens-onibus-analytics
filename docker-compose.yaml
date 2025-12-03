@@ -105,8 +105,10 @@ services:
     environment:
       - QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE=1024M
       # Modo Econômico (In-Memory)
-      - NESSIE_VERSION_STORE_TYPE=INMEMORY
-      - JAVA_OPTS=-Xms512m -Xmx1024m
+      - NESSIE_VERSION_STORE_TYPE=ROCKSDB
+      - NESSIE_VERSION_STORE_ROCKSDB_PATH=/var/lib/nessie/data
+    volumes:
+      - ./data_volumes/nessie_data:/var/lib/nessie/data
     deploy:
       resources:
         limits:
