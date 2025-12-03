@@ -93,7 +93,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 4.5G # Permitimos usar até 4.5GB (usando swap se precisar)
+          memory: 8G # Permitimos usar até 4.5GB (usando swap se precisar)
     restart: unless-stopped
 
   # --- DATA CATALOG (GIT FOR DATA) ---
