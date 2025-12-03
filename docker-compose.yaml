@@ -9,10 +9,10 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE_DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE_LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
-    # Reduzindo a concorrência para economizar CPU/RAM
-    AIRFLOW__CORE__PARALLELISM: 2
-    AIRFLOW__CORE__DAG_CONCURRENCY: 2
-    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/keys/gcp-key.json
+    # OTIMIZAÇÃO VPS: Usa as 4 vCPUs para processar tarefas em paralelo
+    AIRFLOW__CORE__PARALLELISM: 4
+    AIRFLOW__CORE__DAG_CONCURRENCY: 4
+    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/keys/airflow-sa.json
   volumes:
     - ./dags:/opt/airflow/dags
     - ./dbt_project:/opt/airflow/dbt_project
@@ -22,13 +22,14 @@ x-airflow-common: &airflow-common
   deploy:
     resources:
       limits:
-        memory: 1.5G # Limite bem rígido para o AirFlow não estourar
+        memory: 2G # Limite de Segurança para o Airflow
   depends_on:
-    &airflow-common-depends-on
+    # &airflow-common-depends-on
     postgres:
       condition: service_healthy
 
 services:
+  # --- METADADOS (AIRFLOW) ---
   postgres:
     image: postgres:13
     environment:
@@ -47,6 +48,7 @@ services:
       retries: 5
     restart: always
 
+  # --- ORQUESTRAÇÃO ---
   airflow-webserver:
     <<: *airflow-common
     command: webserver
@@ -73,6 +75,7 @@ services:
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     command: "bash -c 'airflow users create --username admin --firstname MVP --lastname Rio Viagens Onibus Analytics --role Admin --email admin@example.com --password admin'"
 
+  # --- LAKEHOUSE ENGINE ---
   dremio:
     image: dremio/dremio-oss:latest
     container_name: dremio
@@ -81,11 +84,59 @@ services:
       - "31010:31010"
     environment:
       # A MÁGICA DA ECONOMIA AQUI:
-      # Força o Java a usar no máximo 1.5GB de Heap.
-      # O Dremio vai reclamar que é pouco, mas para MVP funciona.
-      - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Xms1024m -Xmx1536m -XX:MaxDirectMemorySize=512m
+      # TUNING JVM VPS:
+      # Heap de 2.5GB (Processamento) + 1GB Direct (Cache/IO)
+      - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Xms1024m -Xmx2560m -XX:MaxDirectMemorySize=1024m
     volumes:
       - ./data_volumes/dremio_data:/opt/dremio/data
+      - ./keys/dremio-sa.json:/opt/dremio/keys/dremio-sa.json
+    deploy:
+      resources:
+        limits:
+          memory: 4.5G # Permitimos usar até 4.5GB (usando swap se precisar)
+    restart: unless-stopped
+
+  # --- DATA CATALOG (GIT FOR DATA) ---
+  nessie:
+    image: projectnessie/nessie:latest
+    container_name: nessie
+    ports:
+      - "19120:19120"
+    environment:
+      - QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE=1024M
+      # Modo Econômico (In-Memory)
+      - NESSIE_VERSION_STORE_TYPE=INMEMORY
+      - JAVA_OPTS=-Xms512m -Xmx1024m
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+    restart: unless-stopped
+
+  # --- GESTÃO VISUAL ---
+  portainer:
+    image: portainer/portainer:latest
+    container_name: portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data_volumes/portainer_data:/data
+    restart: always
+
+  # --- MONITORAMENTO TUI (TERMINAL UI) ---
+  lazydocker:
+    image: lazydocker/lazydocker:latest
+    container_name: lazydocker
+    # O lazydocker precisa falar com o Docker do Host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data_volumes/lazydocker_config:/.config/jesseduffield/lazydocker
+    # Configuraões para manter o terminal interativo aberto
+    stdin_open: true
+    tty: true
+    # Não precisa de rede, pois fala direto com o socket
+    network_mode: none
     restart: unless-stopped
 
 networks:
