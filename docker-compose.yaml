@@ -33,9 +33,9 @@ services:
   postgres:
     image: postgres:13
     environment:
-      POSTGRESS_USER: airflow
-      POSTGRESS_PASSWORD: airflow
-      POSTGRESS_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
     volumes:
       - ./data_volumes/postgres_data:/var/lib/postgresql/data
     deploy:
