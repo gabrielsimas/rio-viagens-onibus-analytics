@@ -1,5 +1,3 @@
-version: '3.8'
-
 x-airflow-common: &airflow-common
   build: .
   environment:
@@ -123,21 +121,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data_volumes/portainer_data:/data
     restart: always
-
-  # --- MONITORAMENTO TUI (TERMINAL UI) ---
-  lazydocker:
-    image: lazydocker/lazydocker:latest
-    container_name: lazydocker
-    # O lazydocker precisa falar com o Docker do Host
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./data_volumes/lazydocker_config:/.config/jesseduffield/lazydocker
-    # Configuraões para manter o terminal interativo aberto
-    stdin_open: true
-    tty: true
-    # Não precisa de rede, pois fala direto com o socket
-    network_mode: none
-    restart: unless-stopped
 
 networks:
   default:
