@@ -1,4 +1,4 @@
-FROM apache/airflow:slim-3.1.3rc1
+FROM apache/airflow:slim-2.10.0
 
 USER root
 RUN apt-get update && \
