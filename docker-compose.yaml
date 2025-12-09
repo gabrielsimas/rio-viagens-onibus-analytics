@@ -61,6 +61,14 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
+    environment:
+      BUCKET_LANDING: ${BUCKET_LANDING}
+      BUCKET_RAW: ${BUCKET_RAW}
+      FOLDER_ID_ONIBUS: ${FOLDER_ID_ONIBUS}
+      FOLDER_ID_FROTA: ${FOLDER_ID_FROTA}
+      FOLDER_ID_CLIMA: ${FOLDER_ID_CLIMA}
+      FOLDER_ID_ESTACOES: ${FOLDER_ID_ESTACOES}
+      FOLDER_ID_1746: ${FOLDER_ID_1746}
     command: scheduler
     restart: always
 
