@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from airflow.operators.python import PythonOperator
 from modules.ingestion_manager import IngestionManager
 
+
 class PipelineOrchestrator:
     """
     Classe responsável por definir e construir a DAG do pipeline de ingestão.

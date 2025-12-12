@@ -102,7 +102,7 @@ class IngestionManager:
                         COPY (
                             SELECT * FROM read_csv_auto('{local_csv_path}', auto_detect=TRUE, all_varchar=FALSE)
                             )
-                        TO '{local_csv_path}' (FORMAT 'PARQUET', CODEC 'SNAPPY');
+                        TO '{local_parquet_path}' (FORMAT 'PARQUET', CODEC 'SNAPPY');
                     """
                     duckdb.query(query)
 

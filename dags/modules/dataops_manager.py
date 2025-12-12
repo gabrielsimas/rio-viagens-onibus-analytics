@@ -1,5 +1,5 @@
 import logging
-from airflow.providers.common.sql.hooks.sql import DbHook
+from airflow.providers.common.sql.hooks.sql import DbApiHook
 
 
 class DataOpsManager:
@@ -25,7 +25,7 @@ class DataOpsManager:
         """Faz o merge atômic (transacional) para a Main."""
         sql = f'MERGE BRANCH "{branch_name}" INTO {self._catalog} INTO "{target_ref}"'
         logging.info(f"Executando o Merge: {branch_name} -> {target_ref}")
-        self.hook.run(sql)
+        self._hook.run(sql)
         logging.info(
             f"Merge entre {branch_name} -> {target_ref} realizado com sucesso!"
         )
