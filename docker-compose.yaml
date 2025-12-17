@@ -3,13 +3,13 @@ x-airflow-common: &airflow-common
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE_DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE_LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
     # OTIMIZAÇÃO VPS: Usa as 4 vCPUs para processar tarefas em paralelo
     AIRFLOW__CORE__PARALLELISM: 4
-    AIRFLOW__CORE__DAG_CONCURRENCY: 4
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 4
     GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/keys/airflow-sa.json
   volumes:
     - ./dags:/opt/airflow/dags
@@ -67,6 +67,7 @@ services:
       airflow-cli:
         condition: service_completed_successfully
     environment:
+      <<: *airflow-common-env
       BUCKET_LANDING: ${BUCKET_LANDING}
       FOLDER_ID_ONIBUS: ${FOLDER_ID_ONIBUS}
       FOLDER_ID_FROTA: ${FOLDER_ID_FROTA}
@@ -80,7 +81,7 @@ services:
     <<: *airflow-common
     environment:
       <<: *airflow-common-env
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     command: >
       bash -c "airflow db init && airflow users list | grep -q 'admin' ||
       airflow users create --username admin --firstname MVP --lastname 'Rio Viagens' --role Admin --email admin@example.com --password admin"
