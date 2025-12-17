@@ -61,9 +61,13 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-cli:
+        condition: service_completed_succesfully
     environment:
       BUCKET_LANDING: ${BUCKET_LANDING}
-      BUCKET_RAW: ${BUCKET_RAW}
       FOLDER_ID_ONIBUS: ${FOLDER_ID_ONIBUS}
       FOLDER_ID_FROTA: ${FOLDER_ID_FROTA}
       FOLDER_ID_CLIMA: ${FOLDER_ID_CLIMA}
@@ -74,8 +78,6 @@ services:
 
   airflow-cli:
     <<: *airflow-common
-    profiles:
-      - debug
     environment:
       <<: *airflow-common-env
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
