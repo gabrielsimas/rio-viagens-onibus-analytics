@@ -13,5 +13,5 @@ dbt-dremio    # Para transformar dados dentro do Dremio
 apache-airflow-providers-google
 duckdb >= 0.10.0
 pyarrow
-airflow-operators
+# airflow-operators
 pytest
