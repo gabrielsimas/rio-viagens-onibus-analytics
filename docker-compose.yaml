@@ -65,7 +65,7 @@ services:
       postgres:
         condition: service_healthy
       airflow-cli:
-        condition: service_completed_succesfully
+        condition: service_completed_successfully
     environment:
       BUCKET_LANDING: ${BUCKET_LANDING}
       FOLDER_ID_ONIBUS: ${FOLDER_ID_ONIBUS}
