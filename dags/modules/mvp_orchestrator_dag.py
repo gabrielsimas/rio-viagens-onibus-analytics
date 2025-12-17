@@ -49,7 +49,7 @@ class PipelineOrchestrator:
             description="Pipeline de Ingestão: Drive -> Landing -> Bronze (Parquet)",
             schedule_interval=schedule_interval,
             catchup=False,
-            tags=['ingestao', 'bronze','duckdb','poo']
+            tags=['ingestao', 'bronze', 'duckdb', 'poo']
         ) as dag:
 
             # Iteração Dinâmica: Cria uma Task para cada pasta configurada
@@ -60,7 +60,7 @@ class PipelineOrchestrator:
                     continue
 
                 PythonOperator(
-                        task_id='ingest_drive_to_bronze_full',
+                        task_id=f'ingest_{dataset_name}',
                         python_callable=self._ingestor.process_file_to_bronze,
                         op_kwargs={
                             'folder_id': folder_id,
