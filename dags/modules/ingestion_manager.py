@@ -3,7 +3,7 @@ import duckdb
 import logging
 import tempfile
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
-from airflow.providers.google.suite.hooks.drive import GoogleDriveHook.google.suite.hooks.drive import GoogleDriveHook
+from airflow.providers.google.suite.hooks.drive import GoogleDriveHook
 
 
 class IngestionManager:
