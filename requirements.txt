@@ -1,0 +1,18 @@
+# Orchestration
+apache-airflow-providers-google
+apache-airflow-providers-docker
+apache-airflow-providers-odbc
+
+# Transformation (dbt)
+dbt-core>=1.8.0
+dbt-bigquery  # Para ler do BigQuery/GCS se necessário
+dbt-dremio    # Para transformar dados dentro do Dremio
+# dbt-spark   # (Opcional) Se for usar spark localmente depois
+
+# Utilities
+apache-airflow-providers-google
+duckdb >= 0.10.0
+pyarrow
+# airflow-operators
+pytest
+pyodbc

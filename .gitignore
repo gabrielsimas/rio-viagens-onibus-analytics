@@ -1,0 +1,67 @@
+# --- Segurança e Credenciais (CRÍTICO) ---
+keys/
+*.json
+*.pem
+.env
+.env.local
+
+# --- Dados e Volumes ---
+data_volumes/
+*.csv
+*.parquet
+*.avro
+postgres_data/
+dremio_data/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# --- dbt ---
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# --- Airflow ---
+airflow-webserver.pid
+standalone_admin_password.txt
+
+# --- IDEs e Sistema Operacional ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Logs Gerais ---
+logs/
+*.log
+
+# --- Terraform (CRÍTICO) ---
+# Ignora arquivos de estado local (que podem conter senhas em texto puro)
+*.tfstate
+*.tfstate.*
+
+# Ignora pastas de plugins e configuração local
+.terraform/
+.terraform.lock.hcl
+
+# Ignora arquivos de variáveis que podem ter segredos
+*.tfvars
+*.tfvars.json
+
+# Ignora planos de execução salvos
+*.plan
+
+# Ignora chaves JSON baixadas (Segurança Máxima)
+*.json
+keys/*.json
+
+# Ignora logs de crash
+crash.log
+id_rsa_painel
+*.ppk
+*.pub

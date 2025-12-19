@@ -1,0 +1,147 @@
+x-airflow-common: &airflow-common
+  build: .
+  environment:
+    &airflow-common-env
+    PYTHONPATH: /opt/airflow/dags
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE_DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__IS_PAUSED_UPON_CREATION: 'true'
+    AIRFLOW__CORE_LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session,airflow.api.auth.backend.basic_auth'
+    AIRFLOW__WEBSERVER__RBAC: 'True'
+    # OTIMIZAÇÃO VPS: Usa as 4 vCPUs para processar tarefas em paralelo
+    AIRFLOW__CORE__PARALLELISM: 4
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 4
+    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/keys/airflow-sa.json
+    BUCKET_LANDING: ${BUCKET_LANDING}
+    BUCKET_BRONZE: ${BUCKET_BRONZE}
+    FOLDER_ID_ONIBUS: ${FOLDER_ID_ONIBUS}
+    FOLDER_ID_FROTA: ${FOLDER_ID_FROTA}
+    FOLDER_ID_CLIMA: ${FOLDER_ID_CLIMA}
+    FOLDER_ID_ESTACOES: ${FOLDER_ID_ESTACOES}
+    FOLDER_ID_1746: ${FOLDER_ID_1746}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./dbt_project:/opt/airflow/dbt_project
+    - ./plugins:/opt/airflow/plugins
+    - ./keys:/opt/airflow/keys
+    - ./webserver_config.py:/opt/airflow/webserver_config.py
+  user: "${AIRFLOW_UID:-50000}:0"
+  deploy:
+    resources:
+      limits:
+        memory: 2G # Limite de Segurança para o Airflow
+  depends_on:
+    # &airflow-common-depends-on
+    postgres:
+      condition: service_healthy
+
+services:
+  # --- METADADOS (AIRFLOW) ---
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - ./data_volumes/postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M #Pg aguenta bem com pouca RAM para metadados
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+    restart: always
+
+  # --- ORQUESTRAÇÃO ---
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-cli:
+        condition: service_completed_successfully
+    environment:
+      <<: *airflow-common-env
+    command: scheduler
+    restart: always
+
+  airflow-cli:
+    <<: *airflow-common
+    environment:
+      <<: *airflow-common-env
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    command: >
+      bash -c "airflow db init && airflow users list | grep -q 'admin' ||
+      airflow users create --username admin --firstname MVP --lastname 'Rio Viagens' --role Admin --email admin@example.com --password admin"
+
+  # --- LAKEHOUSE ENGINE ---
+  dremio:
+    image: dremio/dremio-oss:latest
+    container_name: dremio
+    ports:
+      - "9047:9047"
+      - "31010:31010"
+    environment:
+      # A MÁGICA DA ECONOMIA AQUI:
+      # TUNING JVM VPS:
+      # Heap de 2.5GB (Processamento) + 1GB Direct (Cache/IO)
+      - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Xms1024m -Xmx2560m -XX:MaxDirectMemorySize=1024m
+    volumes:
+      - ./data_volumes/dremio_data:/opt/dremio/data
+      - ./keys/dremio-sa.json:/opt/dremio/keys/dremio-sa.json
+    deploy:
+      resources:
+        limits:
+          memory: 12G # Permitimos usar até 4.5GB (usando swap se precisar)
+    restart: unless-stopped
+
+  # --- DATA CATALOG (GIT FOR DATA) ---
+  nessie:
+    image: projectnessie/nessie:latest
+    container_name: nessie
+    ports:
+      - "19120:19120"
+    environment:
+      - QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE=1024M
+      # Modo Econômico (In-Memory)
+      - NESSIE_VERSION_STORE_TYPE=ROCKSDB
+      - NESSIE_VERSION_STORE_ROCKSDB_PATH=/var/lib/nessie/data
+    volumes:
+      - ./data_volumes/nessie_data:/var/lib/nessie/data
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+    restart: unless-stopped
+
+  # --- GESTÃO VISUAL ---
+  portainer:
+    image: portainer/portainer:latest
+    container_name: portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data_volumes/portainer_data:/data
+    restart: always
+
+networks:
+  default:
+    name: mvp_network
