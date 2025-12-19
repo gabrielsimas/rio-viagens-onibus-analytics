@@ -14,6 +14,13 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__PARALLELISM: 4
     AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 4
     GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/keys/airflow-sa.json
+    BUCKET_LANDING: ${BUCKET_LANDING}
+    BUCKET_BRONZE: ${BUCKET_BRONZE}
+    FOLDER_ID_ONIBUS: ${FOLDER_ID_ONIBUS}
+    FOLDER_ID_FROTA: ${FOLDER_ID_FROTA}
+    FOLDER_ID_CLIMA: ${FOLDER_ID_CLIMA}
+    FOLDER_ID_ESTACOES: ${FOLDER_ID_ESTACOES}
+    FOLDER_ID_1746: ${FOLDER_ID_1746}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./dbt_project:/opt/airflow/dbt_project
@@ -72,12 +79,6 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *airflow-common-env
-      BUCKET_LANDING: ${BUCKET_LANDING}
-      FOLDER_ID_ONIBUS: ${FOLDER_ID_ONIBUS}
-      FOLDER_ID_FROTA: ${FOLDER_ID_FROTA}
-      FOLDER_ID_CLIMA: ${FOLDER_ID_CLIMA}
-      FOLDER_ID_ESTACOES: ${FOLDER_ID_ESTACOES}
-      FOLDER_ID_1746: ${FOLDER_ID_1746}
     command: scheduler
     restart: always
 
