@@ -66,7 +66,8 @@ class PipelineOrchestrator:
                             'folder_id': folder_id,
                             'bucket_landing': self._bucket_landing,
                             'bucket_bronze': self._bucket_bronze,
-                            'dataset_name': dataset_name  # Passa o contexto para organizar subpastas
+                            'dataset_name': dataset_name,  # Passa o contexto para organizar subpastas
+                            'data_referencia': '{{ ds }}'
                         }
                     )
 
