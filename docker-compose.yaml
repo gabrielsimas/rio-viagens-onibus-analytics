@@ -17,6 +17,7 @@ x-airflow-common: &airflow-common
     - ./dbt_project:/opt/airflow/dbt_project
     - ./plugins:/opt/airflow/plugins
     - ./keys:/opt/airflow/keys
+    - ./webserver_config.py:/opt/airflow/webserver_config.py
   user: "${AIRFLOW_UID:-50000}:0"
   deploy:
     resources:
