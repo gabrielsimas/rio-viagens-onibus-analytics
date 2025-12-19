@@ -1,4 +1,4 @@
-from dags.modules.mvp_orchestrator_dag import PipelineOrchestrator
+from modules.mvp_orchestrator_dag import PipelineOrchestrator
 
 orchestrator = PipelineOrchestrator()
 dag = orchestrator.create_dag(
