@@ -5,6 +5,50 @@ from modules.dataops_manager import DataOpsManager
 from airflow.operators.python import PythonOperator
 from modules.ingestion_manager import IngestionManager
 
+# Em modules/mvp_orchestrator_dag.py
+
+SCHEMAS = {
+    "clima_pluviometria": """
+        primary_key VARCHAR, id_estacao VARCHAR, acumulado_chuva_15_min DOUBLE,
+        acumulado_chuva_1_h DOUBLE, acumulado_chuva_4_h DOUBLE, acumulado_chuva_24_h DOUBLE,
+        acumulado_chuva_96_h DOUBLE, horario TIME, data_particao DATE
+    """,
+    "estacoes_clima": """
+        id_estacao VARCHAR, estacao VARCHAR, latitude DOUBLE, longitude DOUBLE,
+        cota DOUBLE, x DOUBLE, y DOUBLE, endereco VARCHAR, situacao VARCHAR,
+        data_inicio_operacao TIMESTAMP, data_fim_operacao TIMESTAMP, data_atualizacao TIMESTAMP
+    """,
+    "licenciamento_frota": """
+        carroceria VARCHAR, id_chassi BIGINT, id_fabricante_chassi BIGINT, nome_chassi VARCHAR,
+        id_planta BIGINT, tipo_veiculo VARCHAR, status VARCHAR, data_inicio_vinculo DATE,
+        data_ultima_vistoria DATE, ano_ultima_vistoria BIGINT, ultima_situacao VARCHAR,
+        tecnologia VARCHAR, quantidade_lotacao_pe BIGINT, quantidade_lotacao_sentado BIGINT,
+        tipo_combustivel VARCHAR, indicador_ar_condicionado BOOLEAN, indicador_elevador BOOLEAN,
+        indicador_usb BOOLEAN, indicador_wifi BOOLEAN, indicador_veiculo_lacrado BOOLEAN,
+        indicador_data_ultima_vistoria_tratada BOOLEAN, data_arquivo_fonte DATE,
+        versao VARCHAR, datetime_ultima_atualizacao TIMESTAMP, id_execucao_dbt VARCHAR,
+        ano_ultima_vistoria_atualizado BIGINT
+    """,
+    "reclamacoes_1746": """
+        id_unidade_organizacional VARCHAR, nome_unidade_organizacional VARCHAR,
+        id_unidade_organizacional_mae VARCHAR, unidade_organizacional_ouvidoria VARCHAR,
+        categoria VARCHAR, id_tipo VARCHAR, tipo VARCHAR, id_subtipo VARCHAR,
+        subtipo VARCHAR, status VARCHAR, longitude DOUBLE, latitude DOUBLE,
+        data_alvo_finalizacao TIMESTAMP, data_alvo_diagnostico TIMESTAMP,
+        data_real_diagnostico TIMESTAMP, tempo_prazo BIGINT, prazo_unidade VARCHAR,
+        prazo_tipo VARCHAR, dentro_prazo VARCHAR, situacao VARCHAR, tipo_situacao VARCHAR,
+        justificativa_status VARCHAR, reclamacoes BIGINT, extracted_at TIMESTAMP,
+        updated_at VARCHAR, data_particao DATE
+    """,
+    "viagens_onibus": """
+        data DATE, consorcio VARCHAR, tipo_dia VARCHAR, id_empresa VARCHAR,
+        id_veiculo VARCHAR, id_viagem VARCHAR, servico VARCHAR, shape_id VARCHAR,
+        sentido VARCHAR, datetime_partida TIMESTAMP, datetime_chegada TIMESTAMP,
+        tempo_viagem BIGINT, distancia_planejada DOUBLE, perc_conformidade_shape DOUBLE,
+        perc_conformidade_registros DOUBLE, versao_modelo VARCHAR
+    """,
+}
+
 
 class PipelineOrchestrator:
     """

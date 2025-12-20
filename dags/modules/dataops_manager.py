@@ -33,7 +33,10 @@ class DataOpsManager:
                 raise e
 
     def ensure_table_exists(
-        self, dataset_name: str, branch_name: str, bucket_name: str
+        self, dataset_name: str,
+        branch_name: str,
+        bucket_name: str,
+        schema_string: str = None
     ):
         """
         Registra a tabela Iceberg no Nessie via Dremio.
@@ -41,16 +44,23 @@ class DataOpsManager:
         # 1. Muda o contexto para a branch correta
         use_ref_sql = f'USE REFERENCE "{branch_name}" IN {self._catalog}'
 
-        # 2. SQL de criação da tabela (ajuste conforme sua estrutura de pastas no GCS)
-        create_table_sql = f"""
-            CREATE TABLE IF NOT EXISTS {self._catalog}.{dataset_name}
-            AS SELECT * FROM TABLE(gcs_bronze."{bucket_name}"."{dataset_name}" (type => 'parquet'))
-        """
+        if schema_string:
+            # TIPAGEM FORTE: Cria a tabela com o contrato exato que você passou
+            sql_create = f"""
+                CREATE TABLE IF NOT EXISTS {self._catalog}.{dataset_name} ({schema_string})
+                LOCATION 'gs://{bucket_name}/{dataset_name}'
+            """
+        else:
+            # INFERÊNCIA: Caso você não passe o esquema
+            sql_create = f"""
+                CREATE TABLE IF NOT EXISTS {self._catalog}.{dataset_name}
+                AS SELECT * FROM TABLE(gcs_bronze."{bucket_name}"."{dataset_name}" (type => 'parquet'))
+            """
 
         try:
-            logging.info(f"Registrando tabela {dataset_name} na branch {branch_name}")
+            logging.info(f"Registrando {dataset_name} (Mapeado: {bool(schema_string)})...")
             self._execute_sql_direct(use_ref_sql)
-            self._execute_sql_direct(create_table_sql)
+            self._execute_sql_direct(sql_create)
             logging.info(f"Tabela {dataset_name} registrada com sucesso!")
         except Exception as e:
             logging.error(f"Erro ao registrar tabela no Dremio: {e}")
