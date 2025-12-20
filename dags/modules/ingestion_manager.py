@@ -35,7 +35,25 @@ class IngestionManager:
         )
         return build('drive', 'v3', credentials=creds)
 
-    def process_file_to_bronze(self, folder_id, bucket_landing, bucket_bronze, dataset_name, data_referencia):
+    def _validate_not_empty(self, local_parquet):
+        """Apenas garante que o arquivo Parquet gerado tem conteúdo."""
+        con = duckdb.connect()
+        count = con.execute(
+            f"SELECT COUNT(*) FROM read_parquet('{local_parquet}')"
+        ).fetchone()[0]
+        if count == 0:
+            raise ValueError("DQ Fail: Arquivo gerado está vazio.")
+        print(f"Check Bronze: {count} registros encontrados.")
+
+    def process_file_to_bronze(
+        self,
+        folder_id,
+        bucket_landing,
+        bucket_bronze,
+        dataset_name,
+        data_referencia,
+        expected_columns,
+    ):
         print(f"--- Início do Processamento: {dataset_name} (Modo Bypass Ativo) ---")
 
         try:
@@ -83,6 +101,8 @@ class IngestionManager:
                 # DuckDB lê o CSV e já gera o Parquet otimizado
                 con = duckdb.connect()
                 con.execute(f"COPY (SELECT * FROM read_csv_auto('{local_csv}')) TO '{local_parquet}' (FORMAT 'PARQUET')")
+
+                self._validate_not_empty(local_parquet)
 
                 # 5. Upload para GCS (Landing e Bronze)
                 # O GCSHook costuma ser mais estável, mas o bypass é o plano B

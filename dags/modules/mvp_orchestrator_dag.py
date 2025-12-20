@@ -1,6 +1,7 @@
 import os
 from airflow import DAG
 from datetime import datetime, timedelta
+from modules.dataops_manager import DataOpsManager
 from airflow.operators.python import PythonOperator
 from modules.ingestion_manager import IngestionManager
 
@@ -39,6 +40,8 @@ class PipelineOrchestrator:
             'start_date': datetime(2024, 1, 1),
         }
 
+        self._dataops = DataOpsManager()
+
     def create_dag(self, dag_id: str, schedule_interval):
         """
         Cria e retorna o objeto DAG com todas as tasks conectadas.
@@ -52,26 +55,64 @@ class PipelineOrchestrator:
             tags=['ingestao', 'bronze', 'duckdb', 'poo']
         ) as dag:
 
-            # Iteração Dinâmica: Cria uma Task para cada pasta configurada
+            # 1. Cria Branch de Trabalho (Isolamento)
+            # Usamos a data da execução para garantir unicidade: ex: dev_2025_12_20
+            branch_name = "dev_{{ ds_nodash }}"
+
+            create_branch_task = PythonOperator(
+                task_id="create_nessie_branch",
+                python_callable=self._dataops.create_branch,
+                op_kwargs={"branch_name": branch_name},
+            )
+
+            # 2. Ingestão e Registro (Tasks Dinâmicas)
+            # Criamos uma lista para armazenar as últimas tarefas de cada dataset (os registros)
+            # para que o Merge espere por elas.
+            last_tasks_before_merge = []
             for dataset_name, folder_id in self._datasets_config.items():
 
                 if not folder_id:
                     print(f"AVISO: Variável de ambiente para '{dataset_name}' não encontrada. Pulando.")
                     continue
 
-                PythonOperator(
-                        task_id=f'ingest_{dataset_name}',
-                        python_callable=self._ingestor.process_file_to_bronze,
-                        op_kwargs={
-                            'folder_id': folder_id,
-                            'bucket_landing': self._bucket_landing,
-                            'bucket_bronze': self._bucket_bronze,
-                            'dataset_name': dataset_name,  # Passa o contexto para organizar subpastas
-                            'data_referencia': '{{ ds }}'
-                        }
-                    )
+                # 2.1 Task de Ingestão (Drive -> GCS)
+                ingest_task = PythonOperator(
+                    task_id=f"ingest_{dataset_name}",
+                    python_callable=self._ingestor.process_file_to_bronze,
+                    op_kwargs={
+                        "folder_id": folder_id,
+                        "bucket_landing": self._bucket_landing,
+                        "bucket_bronze": self._bucket_bronze,
+                        "dataset_name": dataset_name,
+                        "data_referencia": "{{ ds }}",
+                    },
+                )
 
-            # Aqui você pode adicionar mais tasks facilmente
-            # ex: task_ingest_full >> self.create_dbt_task(dag)
+                register_task = PythonOperator(
+                    task_id=f"register_{dataset_name}_on_dremio",
+                    python_callable=self._dataops.ensure_table_exists,
+                    op_kwargs={
+                        "dataset_name": dataset_name,
+                        "branch_name": branch_name,
+                        "bucket_name": self._bucket_bronze # Adicionado para bater com o DataOpsManager
+                    },
+                )
+
+                # Define o fluxo para este dataset específico:
+                # Cria Branch -> Ingestão -> Registro no Dremio
+                create_branch_task >> ingest_task >> register_task
+
+                # Adicionamos o register_task na lista. O Merge dependerá dele.
+                last_tasks_before_merge.append(register_task)
+
+            # 3. Merge (Publicação Atômica)
+            # Só acontece se todas as ingestões terminarem com sucesso
+            publish_data = PythonOperator(
+                task_id="merge_to_main",
+                python_callable=self._dataops.merge_branch,
+                op_kwargs={"branch_name": branch_name, "target_ref": "main"},
+            )
+
+            last_tasks_before_merge >> publish_data
 
             return dag
