@@ -105,6 +105,7 @@ services:
     ports:
       - "9047:9047"
       - "31010:31010"
+      - "32010:32010"
     environment:
       # A MÁGICA DA ECONOMIA AQUI:
       # TUNING JVM VPS:
