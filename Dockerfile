@@ -18,6 +18,13 @@ RUN apt-get update && \
 
 COPY ./drivers/dremio-flight-odbc.rpm /tmp/
 RUN alien -i /tmp/dremio-flight-odbc.rpm
+
+RUN printf "[Dremio Flight]\n\
+Description=Dremio Arrow Flight SQL ODBC Driver\n\
+Driver=/opt/arrow-flight-sql-odbc-driver/lib64/libarrow-odbc.so.0.9.1.168\n\
+Setup=/opt/arrow-flight-sql-odbc-driver/lib64/libarrow-odbc.so.0.9.1.168\n\
+UsageCount=1" > /etc/odbcinst.ini
+
 USER airflow
 
 USER airflow
