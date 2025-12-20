@@ -13,7 +13,7 @@ x-airflow-common: &airflow-common
     # OTIMIZAÇÃO VPS: Usa as 4 vCPUs para processar tarefas em paralelo
     AIRFLOW__CORE__PARALLELISM: 4
     AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 4
-    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/keys/airflow-sa.json
+    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/keys/sa-airflow.json
     BUCKET_LANDING: ${BUCKET_LANDING}
     BUCKET_BRONZE: ${BUCKET_BRONZE}
     FOLDER_ID_ONIBUS: ${FOLDER_ID_ONIBUS}
@@ -21,6 +21,10 @@ x-airflow-common: &airflow-common
     FOLDER_ID_CLIMA: ${FOLDER_ID_CLIMA}
     FOLDER_ID_ESTACOES: ${FOLDER_ID_ESTACOES}
     FOLDER_ID_1746: ${FOLDER_ID_1746}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
+    AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: ${AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT}
+    AIRFLOW__LOGGING__LOG_FETCHING_TIMEOUT: 10
+    AIRFLOW__PROVIDERS_ODBC__ALLOW_DRIVER_IN_EXTRA: 'true'
   volumes:
     - ./dags:/opt/airflow/dags
     - ./dbt_project:/opt/airflow/dbt_project
@@ -63,6 +67,9 @@ services:
     command: webserver
     ports:
       - "8080:8080"
+    environment:
+      <<: *airflow-common-env
+      AIRFLOW__CORE__TEST_CONNECTION: ${AIRFLOW__CORE__TEST_CONNECTION}
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -98,6 +105,7 @@ services:
     ports:
       - "9047:9047"
       - "31010:31010"
+      - "32010:32010"
     environment:
       # A MÁGICA DA ECONOMIA AQUI:
       # TUNING JVM VPS:
@@ -105,7 +113,7 @@ services:
       - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Xms1024m -Xmx2560m -XX:MaxDirectMemorySize=1024m
     volumes:
       - ./data_volumes/dremio_data:/opt/dremio/data
-      - ./keys/dremio-sa.json:/opt/dremio/keys/dremio-sa.json
+      - ./keys/sa-dremio.json:/opt/dremio/keys/sa-dremio.json
     deploy:
       resources:
         limits:
