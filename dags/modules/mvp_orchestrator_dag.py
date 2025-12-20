@@ -69,8 +69,7 @@ class PipelineOrchestrator:
             'viagens_onibus': os.getenv('FOLDER_ID_ONIBUS'),
             'licenciamento_frota': os.getenv('FOLDER_ID_FROTA'),
             'clima_pluviometria': os.getenv('FOLDER_ID_CLIMA'),
-            'estacoes_clima': os.getenv('FOLDER_ID_ESTACOES'),
-            'reclamacoes_1746': os.getenv('FOLDER_ID_1746')
+            'estacoes_clima': os.getenv('FOLDER_ID_ESTACOES')
         }
         self._ingestor = IngestionManager()
 
