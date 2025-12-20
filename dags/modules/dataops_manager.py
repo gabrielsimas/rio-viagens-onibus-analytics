@@ -33,40 +33,49 @@ class DataOpsManager:
                 raise e
 
     def ensure_table_exists(
-        self, dataset_name: str,
+        self,
+        dataset_name: str,
         branch_name: str,
         bucket_name: str,
-        schema_string: str = None
+        schema_string: str = None,
     ):
         """
-        Registra a tabela Iceberg no Nessie via Dremio.
+        Cria a tabela no Nessie usando CAST para garantir os tipos do catálogo.
         """
-        # 1. Muda o contexto para a branch correta
-        use_ref_sql = f'USE REFERENCE "{branch_name}" IN {self._catalog}'
+        use_ref = f'USE REFERENCE "{branch_name}" IN {self._catalog}'
 
         if schema_string:
-            # TIPAGEM FORTE: Cria a tabela com o contrato exato que você passou
-            sql_create = f"""
-                CREATE TABLE IF NOT EXISTS {self._catalog}.{dataset_name} ({schema_string})
-                LOCATION 'gs://{bucket_name}/{dataset_name}'
-            """
+            # Transforma "col TIPO" em "CAST(col AS TIPO) as col"
+            cols_with_types = [c.strip() for c in schema_string.split(",")]
+            cast_list = []
+            for item in cols_with_types:
+                parts = item.split()
+                if len(parts) >= 2:
+                    col_name = parts[0]
+                    col_type = parts[1]
+                    cast_list.append(f"CAST({col_name} AS {col_type}) as {col_name}")
+
+            select_clause = ", ".join(cast_list)
         else:
-            # INFERÊNCIA: Caso você não passe o esquema
-            sql_create = f"""
-                CREATE TABLE IF NOT EXISTS {self._catalog}.{dataset_name}
-                AS SELECT * FROM TABLE(gcs_bronze."{bucket_name}"."{dataset_name}" (type => 'parquet'))
-            """
+            select_clause = "*"
+
+        # Criamos via CTAS. O Dremio gerencia o LOCATION automaticamente no Nessie.
+        sql_create = f"""
+            CREATE TABLE IF NOT EXISTS {self._catalog}.{dataset_name}
+            AS SELECT {select_clause}
+            FROM TABLE(gcs_bronze."{bucket_name}"."{dataset_name}" (type => 'parquet'))
+        """
 
         try:
-            logging.info(
-                f"Registrando {dataset_name} (Mapeado: {bool(schema_string)})..."
-            )
-            self._execute_sql_direct(use_ref_sql)
+            logging.info(f"Registrando {dataset_name} com tipagem explícita...")
+            self._execute_sql_direct(use_ref)
             self._execute_sql_direct(sql_create)
-            logging.info(f"Tabela {dataset_name} registrada com sucesso!")
+            logging.info(f"Tabela {dataset_name} criada com sucesso.")
         except Exception as e:
-            logging.error(f"Erro ao registrar tabela no Dremio: {e}")
-            raise e
+            if "already exists" in str(e).lower():
+                logging.warning(f"Tabela {dataset_name} já existe na branch.")
+            else:
+                raise e
 
     def merge_branch(self, branch_name: str, target_ref="main"):
         """
