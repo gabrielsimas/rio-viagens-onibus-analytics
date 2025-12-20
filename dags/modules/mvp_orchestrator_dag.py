@@ -138,7 +138,8 @@ class PipelineOrchestrator:
                     op_kwargs={
                         "dataset_name": dataset_name,
                         "branch_name": branch_name,
-                        "bucket_name": self._bucket_bronze # Adicionado para bater com o DataOpsManager
+                        "bucket_name": self._bucket_bronze,  # Adicionado para bater com o DataOpsManager
+                        "schema_string": SCHEMAS.get(dataset_name),
                     },
                 )
 

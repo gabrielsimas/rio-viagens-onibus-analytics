@@ -58,7 +58,9 @@ class DataOpsManager:
             """
 
         try:
-            logging.info(f"Registrando {dataset_name} (Mapeado: {bool(schema_string)})...")
+            logging.info(
+                f"Registrando {dataset_name} (Mapeado: {bool(schema_string)})..."
+            )
             self._execute_sql_direct(use_ref_sql)
             self._execute_sql_direct(sql_create)
             logging.info(f"Tabela {dataset_name} registrada com sucesso!")
