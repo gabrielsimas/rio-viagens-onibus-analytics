@@ -83,9 +83,8 @@ class DataOpsManager:
         """
         sql = f'MERGE BRANCH "{branch_name}" INTO "{target_ref}" IN {self._catalog}'
         try:
-            logging.info(f"Fazendo merge de {branch_name} para {target_ref}")
+            logging.info(f"Publicando dados: {branch_name} -> {target_ref}")
             self._execute_sql_direct(sql)
-            logging.info("Merge realizado com sucesso!")
+            logging.info("Merge concluído!")
         except Exception as e:
-            logging.error(f"Erro no merge: {e}")
             raise e
