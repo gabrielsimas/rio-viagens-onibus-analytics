@@ -1,4 +1,5 @@
 import os
+import pyodbc
 import logging
 from airflow.providers.odbc.hooks.odbc import OdbcHook
 
@@ -14,8 +15,20 @@ class DataOpsManager:
         self._catalog = catalog
         # O OdbcHook gerencia a conexão via pyodbc internamente
         self._hook = OdbcHook(
-            odbc_conn_id=conn_id, driver="Dremio Flight",
-            autocommit=True)
+            odbc_conn_id=conn_id)
+
+    def _execute_sql_direct(self, sql: str):
+        """
+        Bypass Spartan: Conecta direto via pyodbc para forçar o autocommit=True.
+        Isso impede que o Airflow tente gerenciar transações (o que causa o HYC00).
+        """
+        conn_str = self._hook.odbc_connection_string
+        logging.info(f"Dremio SQL (Direct): {sql}")
+
+        # O segredo da vitória: autocommit=True no momento da conexão
+        with pyodbc.connect(conn_str, autocommit=True) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(sql)
 
     def create_branch(self, branch_name: str, source_ref="main"):
         """Cria uma branch isolada no Nessie para isolamento do ETL (WAP pattern)."""
@@ -25,7 +38,7 @@ class DataOpsManager:
             logging.info(
                 f"Dremio DataOps: Tentando criar a branch '{branch_name}' no catálogo '{self._catalog}'"
             )
-            self._hook.run(sql)
+            self._execute_sql_direct(sql)
             logging.info(f"Sucesso: Branch '{branch_name}' criada.")
         except Exception as e:
             # Tratamento para evitar que a DAG quebre se a branch já existir (reprocessamento)
