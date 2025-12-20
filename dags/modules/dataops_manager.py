@@ -44,7 +44,7 @@ class DataOpsManager:
         # 2. SQL de criação da tabela (ajuste conforme sua estrutura de pastas no GCS)
         create_table_sql = f"""
             CREATE TABLE IF NOT EXISTS {self._catalog}.{dataset_name}
-            AS SELECT * FROM gcs_bronze."{bucket_name}"."{dataset_name}"
+            AS SELECT * FROM TABLE(gcs_bronze."{bucket_name}"."{dataset_name}" (type => 'parquet'))
         """
 
         try:
