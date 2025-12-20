@@ -13,7 +13,9 @@ class DataOpsManager:
         self._conn_id = conn_id
         self._catalog = catalog
         # O OdbcHook gerencia a conexão via pyodbc internamente
-        self._hook = OdbcHook(odbc_conn_id=conn_id, driver="Dremio Flight")
+        self._hook = OdbcHook(
+            odbc_conn_id=conn_id, driver="Dremio Flight",
+            autocommit=True)
 
     def create_branch(self, branch_name: str, source_ref="main"):
         """Cria uma branch isolada no Nessie para isolamento do ETL (WAP pattern)."""
