@@ -86,39 +86,33 @@ class PipelineOrchestrator:
         self._dataops = DataOpsManager()
 
     def create_dag(self, dag_id: str, schedule_interval):
-        """
-        Cria e retorna o objeto DAG com todas as tasks conectadas.
-        """
         with DAG(
             dag_id=dag_id,
             default_args=self._default_args,
             description="Pipeline de Ingestão: Drive -> Landing -> Bronze (Parquet)",
             schedule_interval=schedule_interval,
             catchup=False,
-            tags=['ingestao', 'bronze', 'duckdb', 'poo']
+            tags=["ingestao", "bronze", "duckdb", "poo"],
         ) as dag:
 
-            # 1. Cria Branch de Trabalho (Isolamento)
-            # Usamos a data da execução para garantir unicidade: ex: dev_2025_12_20
-            branch_name = "dev_{{ ds_nodash }}"
-
-            create_branch_task = PythonOperator(
-                task_id="create_nessie_branch",
-                python_callable=self._dataops.create_branch,
-                op_kwargs={"branch_name": branch_name},
-            )
-
-            # 2. Ingestão e Registro (Tasks Dinâmicas)
-            # Criamos uma lista para armazenar as últimas tarefas de cada dataset (os registros)
-            # para que o Merge espere por elas.
-            last_tasks_before_merge = []
+            # 1. Loop de Datasets (Configurado sem as reclamações)
             for dataset_name, folder_id in self._datasets_config.items():
 
                 if not folder_id:
-                    print(f"AVISO: Variável de ambiente para '{dataset_name}' não encontrada. Pulando.")
                     continue
 
-                # 2.1 Task de Ingestão (Drive -> GCS)
+                # 2. Branch ÚNICA por Dataset (Ex: dev_viagens_onibus_20251220)
+                # Isso isola o trabalho e evita que um erro "apague" o progresso de outros
+                branch_name = f"dev_{dataset_name}_{{{{ ds_nodash }}}}"
+
+                # 2.1 Criar a branch para este dataset
+                create_branch_task = PythonOperator(
+                    task_id=f"create_branch_{dataset_name}",
+                    python_callable=self._dataops.create_branch,
+                    op_kwargs={"branch_name": branch_name},
+                )
+
+                # 2.2 Ingestão (Drive -> GCS)
                 ingest_task = PythonOperator(
                     task_id=f"ingest_{dataset_name}",
                     python_callable=self._ingestor.process_file_to_bronze,
@@ -131,32 +125,26 @@ class PipelineOrchestrator:
                     },
                 )
 
+                # 2.3 Registro (Dremio/Nessie) com Tipagem Forte
                 register_task = PythonOperator(
                     task_id=f"register_{dataset_name}_on_dremio",
                     python_callable=self._dataops.ensure_table_exists,
                     op_kwargs={
                         "dataset_name": dataset_name,
                         "branch_name": branch_name,
-                        "bucket_name": self._bucket_bronze,  # Adicionado para bater com o DataOpsManager
+                        "bucket_name": self._bucket_bronze,
                         "schema_string": SCHEMAS.get(dataset_name),
                     },
                 )
 
-                # Define o fluxo para este dataset específico:
-                # Cria Branch -> Ingestão -> Registro no Dremio
-                create_branch_task >> ingest_task >> register_task
+                # 2.4 Merge Individual (Publica apenas este dataset na Main)
+                merge_task = PythonOperator(
+                    task_id=f"merge_{dataset_name}_to_main",
+                    python_callable=self._dataops.merge_branch,
+                    op_kwargs={"branch_name": branch_name, "target_ref": "main"},
+                )
 
-                # Adicionamos o register_task na lista. O Merge dependerá dele.
-                last_tasks_before_merge.append(register_task)
-
-            # 3. Merge (Publicação Atômica)
-            # Só acontece se todas as ingestões terminarem com sucesso
-            publish_data = PythonOperator(
-                task_id="merge_to_main",
-                python_callable=self._dataops.merge_branch,
-                op_kwargs={"branch_name": branch_name, "target_ref": "main"},
-            )
-
-            last_tasks_before_merge >> publish_data
+                # Define o fluxo isolado: Branch -> Ingest -> Register -> Merge
+                create_branch_task >> ingest_task >> register_task >> merge_task
 
             return dag
