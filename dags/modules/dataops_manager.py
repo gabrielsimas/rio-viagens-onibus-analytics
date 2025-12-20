@@ -33,7 +33,7 @@ class DataOpsManager:
     def create_branch(self, branch_name: str, source_ref="main"):
         """Cria uma branch isolada no Nessie para isolamento do ETL (WAP pattern)."""
         # Syntax Dremio: CREATE BRANCH "nome" IN catalog FROM "origem"
-        sql = f'CREATE BRANCH "{branch_name}" IN {self._catalog} FROM "{source_ref}"'
+        sql = f'CREATE BRANCH "{branch_name}" IN {self._catalog}'
         try:
             logging.info(
                 f"Dremio DataOps: Tentando criar a branch '{branch_name}' no catálogo '{self._catalog}'"
