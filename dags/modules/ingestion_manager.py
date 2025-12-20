@@ -51,8 +51,7 @@ class IngestionManager:
         bucket_landing,
         bucket_bronze,
         dataset_name,
-        data_referencia,
-        expected_columns,
+        data_referencia
     ):
         print(f"--- Início do Processamento: {dataset_name} (Modo Bypass Ativo) ---")
 
