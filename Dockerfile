@@ -10,13 +10,14 @@ RUN apt-get update && \
     unixodbc \
     libpq-dev \
     unixodbc-dev \
+    alien \
     g++ \
     pkg-config && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY ./drivers/dremio-odbc-LATEST.x86_64.deb /tmp/
-RUN dpkg -i /tmp/dremio-odbc-LATEST.x86_64.deb
+COPY ./drivers/dremio-flight-odbc.rpm /tmp/
+RUN alien -i /tmp/dremio-flight-odbc.rpm
 USER airflow
 
 USER airflow
