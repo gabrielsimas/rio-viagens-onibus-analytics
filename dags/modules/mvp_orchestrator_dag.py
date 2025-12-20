@@ -32,12 +32,12 @@ class PipelineOrchestrator:
 
         # 3. Define Argumentos Padrão do Airflow
         self._default_args = {
-            'owner': 'Gabriel Simas',
-            'depends_on_past': False,
-            'email_on_failure': False,
-            'retries': 1,
-            'retry_delay': timedelta(minutes=5),
-            'start_date': datetime(2024, 1, 1),
+            "owner": "Gabriel Simas",
+            "depends_on_past": False,
+            "email_on_failure": False,
+            "retries": 1,
+            "retry_delay": timedelta(seconds=10),
+            "start_date": datetime(2024, 1, 1),
         }
 
         self._dataops = DataOpsManager()
