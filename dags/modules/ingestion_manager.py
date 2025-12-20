@@ -86,8 +86,8 @@ class IngestionManager:
 
                 # 5. Upload para GCS (Landing e Bronze)
                 # O GCSHook costuma ser mais estável, mas o bypass é o plano B
-                path_landing = f"{dataset_name}/landing/{file_name}"
-                path_bronze = f"{dataset_name}/bronze/ano={ano}/mes={mes}/dia={dia}/{output_name}"
+                path_landing = f"{dataset_name}/{ano}/{mes}/{dia}/{file_name}"
+                path_bronze = f"{dataset_name}/ano={ano}/mes={mes}/dia={dia}/{output_name}"
 
                 self._gcs_hook.upload(bucket_name=bucket_landing, object_name=path_landing, filename=local_csv)
                 self._gcs_hook.upload(bucket_name=bucket_bronze, object_name=path_bronze, filename=local_parquet)
