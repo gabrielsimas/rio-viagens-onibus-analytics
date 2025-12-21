@@ -1,7 +1,6 @@
 import os
 from airflow import DAG
 from datetime import datetime, timedelta
-from airflow.operators.bash import BashOperator
 from modules.dataops_manager import DataOpsManager
 from airflow.operators.python import PythonOperator
 from modules.ingestion_manager import IngestionManager
@@ -87,12 +86,6 @@ class PipelineOrchestrator:
 
     def create_dag(self, dag_id: str, schedule_interval):
 
-        # Ajuste o caminho '/opt/airflow/dbt_project' para onde seu projeto dbt está montado no Docker
-        DBT_PROJECT_DIR = "/opt/airflow/dbt_project"
-        dbt_cmd_prefix = (
-            f"export PATH=$PATH:/home/airflow/.local/bin && cd {DBT_PROJECT_DIR}"
-        )
-
         with DAG(
             dag_id=dag_id,
             default_args=self._default_args,
@@ -101,9 +94,6 @@ class PipelineOrchestrator:
             catchup=False,
             tags=["ingestao", "bronze", "duckdb", "poo"],
         ) as dag:
-
-            # Lista para controlar dependências (Fan-in)
-            all_merge_tasks = []
 
             # 1. Loop de Datasets (Configurado sem as reclamações)
             for dataset_name, folder_id in self._datasets_config.items():
@@ -156,61 +146,5 @@ class PipelineOrchestrator:
 
                 # Define o fluxo isolado: Branch -> Ingest -> Register -> Merge
                 create_branch_task >> ingest_task >> register_task >> merge_task
-
-                # Adiciona a tarefa de merge na lista para controle posterior
-                all_merge_tasks.append(merge_task)
-
-            # --- CAMADA SILVER (DBT) ---
-
-            # Variáveis de ambiente comuns para o dbt
-            # CORREÇÃO: Copiamos o ambiente do sistema (PATH, HOME, etc) e ATUALIZAMOS com as nossas
-            dbt_env = os.environ.copy()
-            dbt_env.update({
-                "DBT_PROFILES_DIR": DBT_PROJECT_DIR,
-                "DREMIO_USER": os.getenv("DREMIO_USER"),
-                "DREMIO_PASSWORD": os.getenv("DREMIO_PASSWORD"),
-                # Forçamos o binário do dbt no PATH também aqui, por segurança
-                "PATH": f"/home/airflow/.local/bin:{os.environ.get('PATH', '')}"
-            })
-
-            # --- GRUPO 1: VIAGENS ---
-            dbt_run_viagens = BashOperator(
-                task_id="dbt_run_silver_viagens",
-                # Pode remover o export do comando, pois já está no env acima
-                bash_command=f"cd {DBT_PROJECT_DIR} && dbt run --select silver_viagens_onibus",
-                env=dbt_env,
-            )
-
-            dbt_test_viagens = BashOperator(
-                task_id="dbt_test_silver_viagens",
-                bash_command=f"cd {DBT_PROJECT_DIR} && dbt test --select silver_viagens_onibus",
-                env=dbt_env,
-            )
-
-            # --- GRUPO 2: CLIMA (PLUVIOMETRIA) ---
-            dbt_run_clima = BashOperator(
-                task_id="dbt_run_silver_clima",
-                bash_command=f"cd {DBT_PROJECT_DIR} && dbt run --select silver_pluviometria",
-                env=dbt_env,
-            )
-
-            dbt_test_clima = BashOperator(
-                task_id="dbt_test_silver_clima",
-                bash_command=f"cd {DBT_PROJECT_DIR} && dbt test --select silver_pluviometria",
-                env=dbt_env,
-            )
-
-            # --- ORQUESTRAÇÃO E DEPENDÊNCIAS ---
-
-            # Fluxo Linear de cada tabela: Run -> Test
-            dbt_run_viagens >> dbt_test_viagens
-            dbt_run_clima >> dbt_test_clima
-
-            # O Grande Gatilho:
-            # Assim que TODOS os merges da camada Bronze acabarem,
-            # disparamos Viagens e Clima ao mesmo tempo (Paralelismo).
-            if all_merge_tasks:
-                all_merge_tasks >> dbt_run_viagens
-                all_merge_tasks >> dbt_run_clima
 
             return dag
