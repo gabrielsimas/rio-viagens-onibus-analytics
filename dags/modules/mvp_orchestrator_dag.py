@@ -89,6 +89,9 @@ class PipelineOrchestrator:
 
         # Ajuste o caminho '/opt/airflow/dbt_project' para onde seu projeto dbt está montado no Docker
         DBT_PROJECT_DIR = "/opt/airflow/dbt_project"
+        dbt_cmd_prefix = (
+            f"export PATH=$PATH:/home/airflow/.local/bin && cd {DBT_PROJECT_DIR}"
+        )
 
         with DAG(
             dag_id=dag_id,
@@ -158,8 +161,6 @@ class PipelineOrchestrator:
                 all_merge_tasks.append(merge_task)
 
             # --- CAMADA SILVER (DBT) ---
-            # Definição do diretório do projeto
-            DBT_PROJECT_DIR = "/opt/airflow/dbt_project"
 
             # Variáveis de ambiente comuns para o dbt
             dbt_env = {
@@ -171,13 +172,13 @@ class PipelineOrchestrator:
             # --- GRUPO 1: VIAGENS ---
             dbt_run_viagens = BashOperator(
                 task_id="dbt_run_silver_viagens",
-                bash_command=f"cd {DBT_PROJECT_DIR} && dbt run --select silver_viagens_onibus",
+                bash_command=f"cd {dbt_cmd_prefix} && dbt run --select silver_viagens_onibus",
                 env=dbt_env,
             )
 
             dbt_test_viagens = BashOperator(
                 task_id="dbt_test_silver_viagens",
-                bash_command=f"cd {DBT_PROJECT_DIR} && dbt test --select silver_viagens_onibus",
+                bash_command=f"cd {dbt_cmd_prefix} && dbt test --select silver_viagens_onibus",
                 env=dbt_env,
             )
 
@@ -185,13 +186,13 @@ class PipelineOrchestrator:
             # Adicionando a tarefa que faltava!
             dbt_run_clima = BashOperator(
                 task_id="dbt_run_silver_clima",
-                bash_command=f"cd {DBT_PROJECT_DIR} && dbt run --select silver_pluviometria",
+                bash_command=f"cd {dbt_cmd_prefix} && dbt run --select silver_pluviometria",
                 env=dbt_env,
             )
 
             dbt_test_clima = BashOperator(
                 task_id="dbt_test_silver_clima",
-                bash_command=f"cd {DBT_PROJECT_DIR} && dbt test --select silver_pluviometria",
+                bash_command=f"cd {dbt_cmd_prefix} && dbt test --select silver_pluviometria",
                 env=dbt_env,
             )
 
