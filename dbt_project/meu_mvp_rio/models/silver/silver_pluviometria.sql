@@ -1,7 +1,8 @@
 {{ config(
     materialized='table',
     datalake_format='iceberg',
-    root_path='nessie_catalog.silver'
+    root_path='nessie_catalog.silver',
+    partition_by=['data_particao']
 ) }}
 
 WITH source_pluviometria AS (

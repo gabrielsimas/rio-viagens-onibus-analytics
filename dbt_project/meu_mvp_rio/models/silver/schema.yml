@@ -21,3 +21,28 @@ models:
         description: "Horário exato da medição."
       - name: data_particao
         description: "Data de referência da partição do dado no Lakehouse."
+
+  - name: silver_viagens_onibus
+    description: "Tabela tratada de viagens de ônibus com enriquecimento temporal para análise de demanda e consistência."
+    columns:
+      - name: id_viagem
+        description: "Identificador único da viagem."
+        tests:
+          - unique
+          - not_null
+      - name: consorcio
+        description: "Consórcio responsável pela operação."
+      - name: linha
+        description: "Serviço/Linha do ônibus (ex: 457, 309)."
+      - name: data_hora_partida
+        description: "Timestamp de início da viagem."
+        tests:
+          - not_null
+      - name: is_final_de_semana
+        description: "Flag booleano indicando se a viagem ocorreu no Sábado (7) ou Domingo (1)."
+      - name: hora_inicio_viagem
+        description: "Hora inteira (0-23) do início da viagem. Usado para análise de picos."
+      - name: tempo_viagem_informado_min
+        description: "Tempo de viagem vindo da fonte original (GPS)."
+      - name: tempo_viagem_calculado_min
+        description: "Tempo de viagem recalculado (Chegada - Partida). Discrepâncias aqui indicam erro de registro."

@@ -25,6 +25,8 @@ x-airflow-common: &airflow-common
     AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: ${AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT}
     AIRFLOW__LOGGING__LOG_FETCHING_TIMEOUT: 10
     AIRFLOW__PROVIDERS_ODBC__ALLOW_DRIVER_IN_EXTRA: 'true'
+    DREMIO_USER: ${DREMIO_USER}
+    DREMIO_PASSWORD: ${DREMIO_PASSWORD}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./dbt_project:/opt/airflow/dbt_project
