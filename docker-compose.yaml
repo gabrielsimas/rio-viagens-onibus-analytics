@@ -113,7 +113,6 @@ services:
       # TUNING JVM VPS:
       # Heap de 2.5GB (Processamento) + 1GB Direct (Cache/IO)
       - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Xms1024m -Xmx2560m -XX:MaxDirectMemorySize=1024m
-
     volumes:
       - ./data_volumes/dremio_data:/opt/dremio/data
       - ./keys/sa-dremio.json:/opt/dremio/keys/sa-dremio.json
@@ -122,36 +121,6 @@ services:
         limits:
           memory: 12G # Permitimos usar até 4.5GB (usando swap se precisar)
     restart: unless-stopped
-
-  # --- DATA CATALOG (GIT FOR DATA) ---
-  nessie:
-    image: projectnessie/nessie:latest
-    container_name: nessie
-    ports:
-      - "19120:19120"
-    environment:
-      - QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE=1024M
-      # Modo Econômico (In-Memory)
-      - QUARKUS_OTEL_ENABLED=false # Remove aquele lixo de erro 4317 do log
-
-      # MUDANÇA PARA POSTGRES (JDBC):
-      - NESSIE_VERSION_STORE_TYPE=JDBC
-      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://postgres:5432/nessie
-      - QUARKUS_DATASOURCE_USERNAME=nessie
-      - QUARKUS_DATASOURCE_PASSWORD=nessie
-      # Isso força o Nessie a criar as tabelas automaticamente no primeiro boot:
-      - QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=update
-    volumes:
-      - ./data_volumes/nessie_data:/var/lib/nessie/data
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
   # --- GESTÃO VISUAL ---
   portainer:
     image: portainer/portainer:latest
