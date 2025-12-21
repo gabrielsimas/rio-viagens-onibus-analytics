@@ -8,7 +8,7 @@ meu_mvp_rio:
       host: dremio
       user: "{{ env_var('DREMIO_USER') }}"
       password: "{{ env_var('DREMIO_PASSWORD') }}"
-      port: 31010
+      port: 32010
       database: nessie_catalog # Seu Source no Dremio
       schema: silver # Schema padrão onde o dbt vai escrever
       threads: 4
