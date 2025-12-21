@@ -165,8 +165,10 @@ class PipelineOrchestrator:
             # Variáveis de ambiente comuns para o dbt
             dbt_env = {
                 "DBT_PROFILES_DIR": DBT_PROJECT_DIR,
-                # As credenciais DREMIO_USER e PASSWORD já são injetadas no container
-                # via docker-compose, então o dbt as pega automaticamente se definidas.
+                "DREMIO_USER": os.getenv("DREMIO_USER"),  # Pega do docker-compose
+                "DREMIO_PASSWORD": os.getenv(
+                    "DREMIO_PASSWORD"
+                ),  # Pega do docker-compose
             }
 
             # --- GRUPO 1: VIAGENS ---
