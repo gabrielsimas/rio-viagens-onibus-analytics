@@ -67,7 +67,6 @@ class PipelineOrchestrator:
         # A chave do dicionário será o nome da subpasta no GCS
         self._datasets_config = {
             'viagens_onibus': os.getenv('FOLDER_ID_ONIBUS'),
-            'licenciamento_frota': os.getenv('FOLDER_ID_FROTA'),
             'clima_pluviometria': os.getenv('FOLDER_ID_CLIMA'),
             'estacoes_clima': os.getenv('FOLDER_ID_ESTACOES')
         }
