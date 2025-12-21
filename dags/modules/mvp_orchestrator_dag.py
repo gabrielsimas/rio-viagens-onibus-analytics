@@ -163,38 +163,40 @@ class PipelineOrchestrator:
             # --- CAMADA SILVER (DBT) ---
 
             # Variáveis de ambiente comuns para o dbt
-            dbt_env = {
+            # CORREÇÃO: Copiamos o ambiente do sistema (PATH, HOME, etc) e ATUALIZAMOS com as nossas
+            dbt_env = os.environ.copy()
+            dbt_env.update({
                 "DBT_PROFILES_DIR": DBT_PROJECT_DIR,
-                "DREMIO_USER": os.getenv("DREMIO_USER"),  # Pega do docker-compose
-                "DREMIO_PASSWORD": os.getenv(
-                    "DREMIO_PASSWORD"
-                ),  # Pega do docker-compose
-            }
+                "DREMIO_USER": os.getenv("DREMIO_USER"),
+                "DREMIO_PASSWORD": os.getenv("DREMIO_PASSWORD"),
+                # Forçamos o binário do dbt no PATH também aqui, por segurança
+                "PATH": f"/home/airflow/.local/bin:{os.environ.get('PATH', '')}"
+            })
 
             # --- GRUPO 1: VIAGENS ---
             dbt_run_viagens = BashOperator(
                 task_id="dbt_run_silver_viagens",
-                bash_command=f"{dbt_cmd_prefix} && dbt run --select silver_viagens_onibus",
+                # Pode remover o export do comando, pois já está no env acima
+                bash_command=f"cd {DBT_PROJECT_DIR} && dbt run --select silver_viagens_onibus",
                 env=dbt_env,
             )
 
             dbt_test_viagens = BashOperator(
                 task_id="dbt_test_silver_viagens",
-                bash_command=f"{dbt_cmd_prefix} && dbt test --select silver_viagens_onibus",
+                bash_command=f"cd {DBT_PROJECT_DIR} && dbt test --select silver_viagens_onibus",
                 env=dbt_env,
             )
 
             # --- GRUPO 2: CLIMA (PLUVIOMETRIA) ---
-            # Adicionando a tarefa que faltava!
             dbt_run_clima = BashOperator(
                 task_id="dbt_run_silver_clima",
-                bash_command=f"{dbt_cmd_prefix} && dbt run --select silver_pluviometria",
+                bash_command=f"cd {DBT_PROJECT_DIR} && dbt run --select silver_pluviometria",
                 env=dbt_env,
             )
 
             dbt_test_clima = BashOperator(
                 task_id="dbt_test_silver_clima",
-                bash_command=f"{dbt_cmd_prefix} && dbt test --select silver_pluviometria",
+                bash_command=f"cd {DBT_PROJECT_DIR} && dbt test --select silver_pluviometria",
                 env=dbt_env,
             )
 
