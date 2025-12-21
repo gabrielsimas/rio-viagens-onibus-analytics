@@ -25,9 +25,10 @@ x-airflow-common: &airflow-common
     AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: ${AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT}
     AIRFLOW__LOGGING__LOG_FETCHING_TIMEOUT: 10
     AIRFLOW__PROVIDERS_ODBC__ALLOW_DRIVER_IN_EXTRA: 'true'
+    DREMIO_USER: ${DREMIO_USER}
+    DREMIO_PASSWORD: ${DREMIO_PASSWORD}
   volumes:
     - ./dags:/opt/airflow/dags
-    - ./dbt_project:/opt/airflow/dbt_project
     - ./plugins:/opt/airflow/plugins
     - ./keys:/opt/airflow/keys
     - ./webserver_config.py:/opt/airflow/webserver_config.py
@@ -111,6 +112,7 @@ services:
       # TUNING JVM VPS:
       # Heap de 2.5GB (Processamento) + 1GB Direct (Cache/IO)
       - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Xms1024m -Xmx2560m -XX:MaxDirectMemorySize=1024m
+      - DREMIO_JAVA_EXTRA_OPTS=-Dauth.personal_access_tokens.enabled=true
     volumes:
       - ./data_volumes/dremio_data:/opt/dremio/data
       - ./keys/sa-dremio.json:/opt/dremio/keys/sa-dremio.json
@@ -119,26 +121,6 @@ services:
         limits:
           memory: 12G # Permitimos usar até 4.5GB (usando swap se precisar)
     restart: unless-stopped
-
-  # --- DATA CATALOG (GIT FOR DATA) ---
-  nessie:
-    image: projectnessie/nessie:latest
-    container_name: nessie
-    ports:
-      - "19120:19120"
-    environment:
-      - QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE=1024M
-      # Modo Econômico (In-Memory)
-      - NESSIE_VERSION_STORE_TYPE=ROCKSDB
-      - NESSIE_VERSION_STORE_ROCKSDB_PATH=/var/lib/nessie/data
-    volumes:
-      - ./data_volumes/nessie_data:/var/lib/nessie/data
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-    restart: unless-stopped
-
   # --- GESTÃO VISUAL ---
   portainer:
     image: portainer/portainer:latest
