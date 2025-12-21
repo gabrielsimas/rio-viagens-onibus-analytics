@@ -172,13 +172,13 @@ class PipelineOrchestrator:
             # --- GRUPO 1: VIAGENS ---
             dbt_run_viagens = BashOperator(
                 task_id="dbt_run_silver_viagens",
-                bash_command=f"cd {dbt_cmd_prefix} && dbt run --select silver_viagens_onibus",
+                bash_command=f"{dbt_cmd_prefix} && dbt run --select silver_viagens_onibus",
                 env=dbt_env,
             )
 
             dbt_test_viagens = BashOperator(
                 task_id="dbt_test_silver_viagens",
-                bash_command=f"cd {dbt_cmd_prefix} && dbt test --select silver_viagens_onibus",
+                bash_command=f"{dbt_cmd_prefix} && dbt test --select silver_viagens_onibus",
                 env=dbt_env,
             )
 
@@ -186,13 +186,13 @@ class PipelineOrchestrator:
             # Adicionando a tarefa que faltava!
             dbt_run_clima = BashOperator(
                 task_id="dbt_run_silver_clima",
-                bash_command=f"cd {dbt_cmd_prefix} && dbt run --select silver_pluviometria",
+                bash_command=f"{dbt_cmd_prefix} && dbt run --select silver_pluviometria",
                 env=dbt_env,
             )
 
             dbt_test_clima = BashOperator(
                 task_id="dbt_test_silver_clima",
-                bash_command=f"cd {dbt_cmd_prefix} && dbt test --select silver_pluviometria",
+                bash_command=f"{dbt_cmd_prefix} && dbt test --select silver_pluviometria",
                 env=dbt_env,
             )
 
