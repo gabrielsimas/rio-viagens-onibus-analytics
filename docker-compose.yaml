@@ -113,6 +113,7 @@ services:
       # TUNING JVM VPS:
       # Heap de 2.5GB (Processamento) + 1GB Direct (Cache/IO)
       - DREMIO_JAVA_SERVER_EXTRA_OPTS=-Xms1024m -Xmx2560m -XX:MaxDirectMemorySize=1024m
+      - DREMIO_JAVA_EXTRA_OPTS=-Ddremio.tokens.personal.enabled=true
     volumes:
       - ./data_volumes/dremio_data:/opt/dremio/data
       - ./keys/sa-dremio.json:/opt/dremio/keys/sa-dremio.json
