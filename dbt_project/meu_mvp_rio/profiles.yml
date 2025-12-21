@@ -11,6 +11,6 @@ meu_mvp_rio:
       port: 31010
       database: nessie_catalog # Seu Source no Dremio
       schema: silver # Schema padrão onde o dbt vai escrever
-      threads: 1
+      threads: 4
       # Software ou Cloud? Se for Nessie, geralmente comporta-se como Software em termos de conexão
       cloud_host: null
