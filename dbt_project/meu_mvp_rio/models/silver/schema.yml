@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: silver_pluviometria
+    description: "Tabela de pluviometria tratada com classificação de intensidade de chuva e integração com estações."
+    columns:
+      - name: id
+        description: "Chave primária da medição (PK original da Bronze convertida para string)."
+        tests:
+          - unique
+          - not_null
+      - name: nome_estacao
+        description: "Nome amigável da estação meteorológica obtido via join com a tabela de estações."
+      - name: acumulado_1h
+        description: "Volume de chuva acumulado na última hora em mm. Valores nulos foram convertidos para 0.0."
+      - name: tipo_chuva
+        description: "Classificação categórica da intensidade (Fraca - Entre 0 e 5 mm/h, Moderada - entre 5 mm/h e 25 mm/h, Forte - Entre 25,1 mm/h e 50 mm/h, Muito Forte - acima de 50 mm/h)."
+      - name: flag_chuva
+        description: "Indicador binário: 1 para presença de chuva (acumulado > 0) e 0 para tempo seco."
+      - name: horario
+        description: "Horário exato da medição."
+      - name: data_particao
+        description: "Data de referência da partição do dado no Lakehouse."
