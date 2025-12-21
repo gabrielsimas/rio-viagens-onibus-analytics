@@ -29,7 +29,6 @@ x-airflow-common: &airflow-common
     DREMIO_PASSWORD: ${DREMIO_PASSWORD}
   volumes:
     - ./dags:/opt/airflow/dags
-    - ./dbt_project:/opt/airflow/dbt_project
     - ./plugins:/opt/airflow/plugins
     - ./keys:/opt/airflow/keys
     - ./webserver_config.py:/opt/airflow/webserver_config.py
