@@ -5,7 +5,7 @@
 ![Dremio](https://img.shields.io/badge/Dremio-724D99?style=for-the-badge&logo=dremio&logoColor=white)
 ![Apache Iceberg](https://img.shields.io/badge/Apache%20Iceberg-blue?style=for-the-badge&logo=apache&logoColor=white)
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gabrielsimas/rio-viagens-onibus-analytics/blob/main/ARTIGO.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gabrielsimas/rio-viagens-onibus-analytics/blob/master/ARTIGO.ipynb)
 
 Este repositório contém a documentação técnica e os resultados analíticos do projeto de monitoramento de transporte público e impacto climático no Rio de Janeiro. Através de uma arquitetura de **Data Lakehouse**, integramos milhões de registros de telemetria GPS a dados pluviométricos para gerar insights sobre a eficiência operacional da frota.
 
@@ -16,7 +16,7 @@ Este repositório contém a documentação técnica e os resultados analíticos 
 # 🔴🔴🔴 ABRA O ARTIGO COMPLETO AQUI! 🔴🔴🔴
 # 🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻🔻
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gabrielsimas/rio-viagens-onibus-analytics/blob/main/ARTIGO.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gabrielsimas/rio-viagens-onibus-analytics/blob/master/ARTIGO.ipynb)
 
 ---
 
